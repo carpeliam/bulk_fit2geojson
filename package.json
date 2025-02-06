@@ -1,0 +1,17 @@
+{
+  "name": "bulk_fit2geojson",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "description": "",
+  "dependencies": {
+    "easy-fit": "^0.0.8",
+    "mapshaper": "^0.6.102"
+  }
+}
