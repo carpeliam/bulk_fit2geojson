@@ -2,19 +2,18 @@
 import fs from 'fs';
 import path from 'path';
 import easyFitPkg from 'easy-fit';
-import mapshaper from 'mapshaper';
+import simplify from 'simplify-geometry';
 const EasyFit = easyFitPkg.default;
 
 /// Start Config
 const startDate = new Date('2024-04-03');
 const endDate = new Date('2024-08-13T14:30:00.000Z');
+const feetPerMeter = 100 / 2.54 / 12; // 100cm / (2.54cm/in) / (12in/ft)
+function altitude(n) {
+    return (n - 1000) * feetPerMeter;
+}
 // See https://www.npmjs.com/package/easy-fit#api-documentation
-const easyFit = new EasyFit({
-    lengthUnit: 'mi',
-    temperatureUnit: 'farhenheit',
-    speedUnit: 'mph',
-    elapsedRecordField: false,
-});
+const easyFit = new EasyFit({ elapsedRecordField: false });
 const simplifyOptions = {
     percentRetained: 20,
     precision: 0.0001
@@ -73,14 +72,11 @@ function createGeojson(filename, activities) {
     const missingCoordinates = [];
     const activityType = filename.split('_')[1];
     const template = {
-        type: 'FeatureCollection',
-        features: [{
-            type: 'Feature',
-            properties: { activityType },
-            geometry: {
-                type: 'LineString',
-            }
-        }]
+        type: 'Feature',
+        properties: { activityType },
+        geometry: {
+            type: 'LineString',
+        }
     };
 
     if (activities.length > 1) {
@@ -88,21 +84,38 @@ function createGeojson(filename, activities) {
     }
 
     const coordinates = [];
+    let maxLong, minLong, maxLat, minLat, maxAlt, minAlt;
     activities.forEach(activity => {
         activity.records.forEach(record => {
             if (record.position_long != null && record.position_lat != null) {
-                coordinates.push([record.position_long, record.position_lat]);
+                if (!maxLong || maxLong < record.position_long) {
+                    maxLong = record.position_long;
+                }
+                if (!minLong || minLong > record.position_long) {
+                    minLong = record.position_long;
+                }
+                if (!maxLat || maxLat < record.position_lat) {
+                    maxLat = record.position_lat;
+                }
+                if (!minLat || minLat > record.position_lat) {
+                    minLat = record.position_lat;
+                }
+                if (!maxAlt || maxAlt < record.enhanced_altitude) {
+                    maxAlt = record.enhanced_altitude;
+                }
+                if (!minAlt || minAlt > record.enhanced_altitude) {
+                    minAlt = record.enhanced_altitude;
+                }
+                coordinates.push([record.position_long, record.position_lat, altitude(record.enhanced_altitude)]);
             } else {
                 missingCoordinates.push(record);
             }
         });
     });
 
-    template.features[0].geometry.coordinates = coordinates;
+    template.geometry.coordinates = simplify(coordinates, 0.00005).map(coord => coord.map(n => Math.round((n + Number.EPSILON) * 10000) / 10000));
+    template.bbox = [minLong, minLat, altitude(minAlt), maxLong, maxLat, altitude(maxAlt)].map(n => Math.round((n + Number.EPSILON) * 10000) / 10000);
 
     const pathToOutputFile = path.join(geojsonFileDir, `${filename}.geojson`);
-    mapshaper.runCommands(
-        `-i ${filename} -simplify ${simplifyOptions.percentRetained}% -o ${pathToOutputFile} bbox format=geojson precision=${simplifyOptions.precision}`,
-        { [filename]: template }
-    );
+    fs.writeFileSync(pathToOutputFile, JSON.stringify(template));
 }

@@ -12,6 +12,6 @@
   "description": "",
   "dependencies": {
     "easy-fit": "^0.0.8",
-    "mapshaper": "^0.6.102"
+    "simplify-geometry": "^0.0.2"
   }
 }
