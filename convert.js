@@ -113,9 +113,45 @@ function createGeojson(filename, activities) {
         });
     });
 
-    template.geometry.coordinates = simplify(coordinates, 0.00005).map(coord => coord.map(n => Math.round((n + Number.EPSILON) * 10000) / 10000));
+    template.geometry.coordinates = applyTransformations(filename, simplify(coordinates, 0.00004).map(coord => coord.map(n => Math.round((n + Number.EPSILON) * 10000) / 10000)));
     template.bbox = [minLong, minLat, altitude(minAlt), maxLong, maxLat, altitude(maxAlt)].map(n => Math.round((n + Number.EPSILON) * 10000) / 10000);
 
     const pathToOutputFile = path.join(geojsonFileDir, `${filename}.geojson`);
     fs.writeFileSync(pathToOutputFile, JSON.stringify(template));
+}
+
+function applyTransformations(filename, coordinates) {
+    const transformations = {
+        '2024-06-26_hiking': { lastPoint: [-73.6115, 41.6029], radius: 0.00004 },
+    };
+
+    // remove points identified to be road miles
+    if (transformations[filename]) {
+        const { lastPoint, radius } = transformations[filename];
+        let i;
+        for (i = coordinates.length - 1; i > 0; i--) {
+            const coord = coordinates[i];
+            const distance = Math.sqrt((coord[0] - lastPoint[0]) ** 2 + (coord[1] - lastPoint[1]) ** 2);
+            if (distance < radius) {
+                break;
+            }
+        }
+        if (i === coordinates.length - 1) {
+            console.error('Unable to find transformation point for', filename);
+            return coordinates;
+        }
+        console.log('Removing', coordinates.length - i - 1, 'points from', filename);
+        coordinates = coordinates.slice(0, i + 1);
+    }
+
+    // remove duplicate points
+    for (let i = 1; i < coordinates.length; i++) {
+        const [lastLong, lastLat] = coordinates[i - 1];
+        const [currentLong, currentLat] = coordinates[i];
+        if (lastLong === currentLong && lastLat === currentLat) {
+            coordinates.splice(i--, 1);
+        }
+    }
+
+    return coordinates;
 }
