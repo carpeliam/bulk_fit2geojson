@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach, afterEach, Mock } from 'vitest';
 // import simplify from 'simplify-geometry';
 import { FitRecord } from 'fit-file-parser';
-import convert from '../src/convert';
+import convert from '../../src/activities/convert';
 
 describe('convert()', () => {
     vi.mock('simplify-geometry', () => {

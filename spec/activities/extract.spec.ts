@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import extract from '../src/extract';
+import extract from '../../src/activities/extract';
 import path from 'path';
 
 describe('extract()', () => {
   it('returns data for FIT files within the given time frame', async () => {
-    const sampleDirectory = path.join(import.meta.dirname, 'sample');
+    const sampleDirectory = path.join(import.meta.dirname, '..', 'sample');
     const startDate = new Date('2020-01-01');
     const endDate = new Date('2021-01-01');
     
