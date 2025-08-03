@@ -2,22 +2,15 @@
 
 This library, intended to be run on Garmin exported FIT files, does the following:
 1. Converts FIT files to GeoJSON format
-2. Combines multiple activities of the same type happening on the same day
-3. Reduces GeoJSON file size via simplification
+2. Reduces GeoJSON file size via simplification
 
-## Step 1: Find Fit Files from Garmin Export
-Garmin Activity files are stored as zip files in `DI_CONNECT/DI-Connect-Uploaded-Files`.
-## Step 2: Unzip Fit Files
-Unzip all Garmin activity files via the following command:
-```sh
-unzip 'path/to/DI_CONNECT/DI-Connect-Uploaded-Files/UploadedFiles*.zip' -d fit_files
+## Step 1: Export files Files via Garmin Export
+This can be done currently via Garmin's [Data Management](https://www.garmin.com/en-US/account/datamanagement/) page.
+## Step 2: Run this tool over the export, giving it a timeframe to process
+After you've received and unzipped your export, run this tool with the path to the export along with the start date and end date for activities:
 ```
-## Specify parameters in `convert.js`
-The top of `convert.js` contains a Config section where you can configure start and end date, units of measure, and simplification parameters.
-## Run `convert.js`
-```sh
 npm install
-./convert.js
+./process.ts /path/to/garmin-export 2025-01-13 2025-03-15
 ```
 
-Provided nothing went terribly wrong, you'll have some GeoJSON files in the `geojson_files` folder.
+Provided nothing went terribly wrong, you'll have some GeoJSON files in the `out` folder.
